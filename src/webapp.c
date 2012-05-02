@@ -27,6 +27,7 @@ typedef struct {
 } postmask_t;
 
 void head(char *title, char *head) {
+	printf("Content-Type: text/html;charset=UTF-8\r\n\r\n");
 	printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n");
 	printf("<title>%s</title>", title);
 	printf("<h2><a href=\"/\" style=\"text-decoration:none;color:black\">%s</a></h2>\n", title);
@@ -327,8 +328,6 @@ int main(void) {
 	config_t config;
 	time_t start, end;
 	char *query;
-
-	printf("Content-Type:text/html;charset=UTF-8%c%c\n", 13, 10);
 
 	config = readconfig("/etc/blag.conf");
 
