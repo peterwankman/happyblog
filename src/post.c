@@ -28,7 +28,7 @@ void addpost(char *post, size_t size, char *dbname) {
 	printf("Adding post to database '%s'...\n", dbname);
 	
 	if(sqlite3_open(dbname, &db)) {
-		fprintf(stderr, "ERROR: Could not open databese '%s': %s\n", dbname,
+		fprintf(stderr, "ERROR: Could not open database '%s': %s\n", dbname,
 			sqlite3_errmsg(db));
 		return;
 	}
