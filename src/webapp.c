@@ -39,14 +39,15 @@ typedef struct {
 
 static void head(char *title, char *head) {
 	printf("Content-Type: text/html;charset=UTF-8\r\n\r\n");
-	printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n");
+	printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML "
+		"4.0 Transitional//EN\">\n");
 #ifdef RSS
 	printf("<link rel=\"alternate\" type=\"application/rss+xml\" "
 		"title=\"RSS-Feed\" href=\"blag-rss.cgi\">\n");
 #endif
 	printf("\n<title>%s</title>", title);
-	printf("<h2><a href=\"/\" style=\"text-decoration:none;color:black\">%s"
-		"</a></h2>\n", title);
+	printf("<h2><a href=\"blag.cgi\" style=\"text-decoration:none;"
+		"color:black\">%s</a></h2>\n", title);
 	printf("<b>%s</b>\n\n", head);
 }
 
