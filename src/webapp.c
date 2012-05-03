@@ -37,26 +37,31 @@ typedef struct {
 	int type;
 } postmask_t;
 
-void head(char *title, char *head) {
+static void head(char *title, char *head) {
 	printf("Content-Type: text/html;charset=UTF-8\r\n\r\n");
 	printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n");
-	printf("<title>%s</title>", title);
-	printf("<h2><a href=\"/\" style=\"text-decoration:none;color:black\">%s</a></h2>\n", title);
-	printf("<b>%s</b>\n", head);
+#ifdef RSS
+	printf("<link rel=\"alternate\" type=\"application/rss+xml\" "
+		"title=\"RSS-Feed\" href=\"blag-rss.cgi\">\n");
+#endif
+	printf("\n<title>%s</title>", title);
+	printf("<h2><a href=\"/\" style=\"text-decoration:none;color:black\">%s"
+		"</a></h2>\n", title);
+	printf("<b>%s</b>\n\n", head);
 }
 
-void tail(char *tail) {
+static void tail(char *tail) {
 	printf("<div align=right>%s</div>\n", tail);
 }
 
-void delnewline(char *in) {
+static void delnewline(char *in) {
 	int i;
 	for(i = 0; i < strlen(in); i++)
 		if(in[i] == '\n')
 			in[i] = '\0';
 }
 
-int isolder(struct tm *curr, struct tm *last) {
+static int isolder(struct tm *curr, struct tm *last) {
 	if(!last)
 		return 1;
 	if(curr->tm_year < last->tm_year)
@@ -66,7 +71,7 @@ int isolder(struct tm *curr, struct tm *last) {
 	return 0;
 }
 
-int printposts(postmask_t mask, sqlite3 *db) {
+static int printposts(postmask_t mask, sqlite3 *db) {
 	sqlite3_stmt *statement;
 	int newblock = 1, buflen, hash, ret, count = 0;
 	time_t posttime;
@@ -112,11 +117,11 @@ int printposts(postmask_t mask, sqlite3 *db) {
 	sqlite3_finalize(statement);
 
 	if(count)
-		printf("</ul>\n");
+		printf("</ul>\n\n");
 	return count;
 }
 
-config_t readconfig(char *conffile) {
+static config_t readconfig(char *conffile) {
 	config_t out;
 	FILE *fp;
 	char dbfile[512], *buf;
@@ -187,7 +192,7 @@ config_t readconfig(char *conffile) {
 	return out;
 }
 
-int getquerytype(char *query) {
+static int getquerytype(char *query) {
 	int type = TYPE_NONE;
 	
 	if(query == NULL)
@@ -200,7 +205,7 @@ int getquerytype(char *query) {
 	return TYPE_NONE;
 }
 
-unsigned int hex2int(char *in) {
+static unsigned int hex2int(char *in) {
 	unsigned int out = 0;
 	int i;
 
@@ -230,7 +235,8 @@ unsigned int hex2int(char *in) {
 	return out;
 }
 
-void querytotime(char *query, int *year, int *mon, time_t *start, time_t *end) {
+static void querytotime(char *query, int *year, int *mon, 
+						time_t *start, time_t *end) {
 	int datestr;
 	struct tm *buf;
 	time_t now;
@@ -265,7 +271,7 @@ void querytotime(char *query, int *year, int *mon, time_t *start, time_t *end) {
 	*end = mktime(buf);
 }
 
-void querytohash(char *query, unsigned int *hash) {
+static void querytohash(char *query, unsigned int *hash) {
 	*hash = 0;
 
 	if(strlen(query) < 11)
@@ -274,7 +280,7 @@ void querytohash(char *query, unsigned int *hash) {
 	*hash = hex2int(query + 3);
 }
 
-void dispatch(char *query, sqlite3 *db) {
+static void dispatch(char *query, sqlite3 *db) {
 	postmask_t mask;
 	int count, type = getquerytype(query), mon, pmon, year, pyear;
 	time_t now = time(NULL);
@@ -299,7 +305,7 @@ void dispatch(char *query, sqlite3 *db) {
 	count = printposts(mask, db);
 					
 	if(!count) {
-		printf("<p>No entries found.\n");
+		printf("<p>No entries found.\n\n");
 	}
 	
 	printf("<p><div align=center>");

@@ -2,20 +2,27 @@ BIN=bin
 INC=include
 OBJ=objects
 SRC=src
+CGI=/usr/lib/cgi-bin
 
 CC=gcc
 CFLAGS=-O0 -I$(INC)
 LDFLAGS=-lsqlite3
 
+RSS=-DRSS
+
 all:
 	make $(BIN)/blag.cgi
 	make $(BIN)/createdb
+	make $(BIN)/initrss
 	make $(BIN)/post
 
 $(BIN)/blag.cgi: $(SRC)/webapp.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) $(LDFLAGS) $(RSS) -o $@ $^
 
 $(BIN)/createdb: $(SRC)/createdb.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+
+$(BIN)/initrss: $(SRC)/initrss.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
 $(BIN)/post: $(OBJ)/sha1.o $(SRC)/post.c
@@ -25,7 +32,7 @@ $(OBJ)/sha1.o: $(SRC)/sha1.c
 	$(CC) $(CFLAGS) -c -o $@ $^
 
 install: $(BIN)/blag.cgi
-	cp -f $(BIN)/blag.cgi /usr/lib/cgi-bin
+	cp -f $(BIN)/blag.cgi $(CGI)
 
 clean:
 	rm -f $(OBJ)/*
