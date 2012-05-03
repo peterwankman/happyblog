@@ -37,10 +37,16 @@ static void filltable(sqlite3 *db, char *title, char *head, char *tail) {
 }
 
 static void mktables(sqlite3 *db) {
-	int ret;
 	char *errmsg = NULL;
 
 	if(sqlite3_exec(db, "CREATE TABLE entries (id INTEGER PRIMARY KEY, hash "
+		"INTEGER, time INTEGER, entry TEXT);", NULL, 0, &errmsg) != SQLITE_OK) {
+		fprintf(stderr, "SQLite error: %s\n", errmsg);
+		sqlite3_free(errmsg);
+		return;
+	}
+
+	if(sqlite3_exec(db, "CREATE TABLE updates (id INTEGER PRIMARY KEY, hash "
 		"INTEGER, time INTEGER, entry TEXT);", NULL, 0, &errmsg) != SQLITE_OK) {
 		fprintf(stderr, "SQLite error: %s\n", errmsg);
 		sqlite3_free(errmsg);

@@ -71,9 +71,25 @@ static int isolder(struct tm *curr, struct tm *last) {
 	return 0;
 }
 
+static void printupdates(unsigned int hash, sqlite3 *db) {
+	sqlite3_stmt *statement;
+	char *buf;
+
+	sqlite3_prepare(db, "SELECT entry FROM updates WHERE hash "
+		"= :hsh ORDER BY time;", MAXBUF, &statement, NULL);
+	sqlite3_bind_int(statement, 1, hash);
+
+	while(sqlite3_step(statement) == SQLITE_ROW) {
+		buf = sqlite3_column_text(statement, 0);
+		printf(" <p><b>Update</b>: %s\n", buf);
+	}
+
+	sqlite3_finalize(statement);
+}
+
 static int printposts(postmask_t mask, sqlite3 *db) {
 	sqlite3_stmt *statement;
-	int newblock = 1, buflen, hash, ret, count = 0;
+	int newblock = 1, hash, count = 0;
 	time_t posttime;
 	struct tm *currtime, lasttime;
 	char *buf, timebuf[MAXBUF];
@@ -97,7 +113,6 @@ static int printposts(postmask_t mask, sqlite3 *db) {
 	while(sqlite3_step(statement) == SQLITE_ROW) {
 		posttime = sqlite3_column_int(statement, 0);
 		hash = sqlite3_column_int(statement, 1);
-		buflen = sqlite3_column_bytes(statement, 2) + 1;
 		buf = sqlite3_column_text(statement, 2);
 
 		currtime = localtime(&posttime);
@@ -112,6 +127,7 @@ static int printposts(postmask_t mask, sqlite3 *db) {
 			lasttime = *currtime;
 		}
 		printf("<li><a href=\"?ts=%08x\">[l]</a> %s\n", hash, buf);
+		printupdates(hash, db);
 		count++;
 	}
 	sqlite3_finalize(statement);
@@ -124,7 +140,7 @@ static int printposts(postmask_t mask, sqlite3 *db) {
 static config_t readconfig(char *conffile) {
 	config_t out;
 	FILE *fp;
-	char dbfile[512], *buf;
+	char dbfile[MAXBUF], *buf;
 	int buflen;
 	sqlite3_stmt *statement;
 
@@ -136,7 +152,7 @@ static config_t readconfig(char *conffile) {
 		return out;
 	}
 
-	fgets(dbfile, 512, fp);
+	fgets(dbfile, MAXBUF, fp);
 	fclose(fp);
 	delnewline(dbfile);
 
@@ -193,8 +209,6 @@ static config_t readconfig(char *conffile) {
 }
 
 static int getquerytype(char *query) {
-	int type = TYPE_NONE;
-	
 	if(query == NULL)
 		return TYPE_NONE;
 	else if(!strncmp(query, "ts", 2))
@@ -343,13 +357,12 @@ static void dispatch(char *query, sqlite3 *db) {
 
 int main(void) {
 	config_t config;
-	time_t start, end;
 	char *query;
 
 	config = readconfig("/etc/blag.conf");
 
 	if(config.db == NULL)
-		return 1;
+		return EXIT_FAILURE;
 
 	head(config.title, config.head);
 
@@ -363,5 +376,5 @@ int main(void) {
 	free(config.tail);
 
 	sqlite3_close(config.db);
-	return 0;
+	return EXIT_SUCCESS;
 }
