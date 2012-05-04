@@ -22,6 +22,7 @@
 #define TYPE_TIME	1
 #define TYPE_HASH	2
 #define TYPE_MON	3
+#define	TYPE_CSS	4
 
 typedef struct {
 	char *title;
@@ -37,14 +38,27 @@ typedef struct {
 	int type;
 } postmask_t;
 
-static void head(char *title, char *head) {
+static void head(char *title, char *head, char *css, int setcss) {
+	if(setcss && css) {
+		printf("Set-Cookie: css=");
+		if(setcss == 2)
+			printf(" ; expires=Sat, 1-Jan-2000 00:00:00 GMT\r\n");
+		else
+			printf("%s\r\n", css);
+	}
+
 	printf("Content-Type: text/html;charset=UTF-8\r\n\r\n");
 	printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML "
 		"4.0 Transitional//EN\">\n");
+
+	if(css && css[0])
+		printf("<link rel=stylesheet type=\"text/css\" href=\"%s\">\n", css);
+
 #ifdef RSS
 	printf("<link rel=\"alternate\" type=\"application/rss+xml\" "
 		"title=\"RSS-Feed\" href=\"blag-rss.cgi\">\n");
 #endif
+
 	printf("\n<title>%s</title>", title);
 	printf("<h2><a href=\"blag.cgi\" style=\"text-decoration:none;"
 		"color:black\">%s</a></h2>\n", title);
@@ -212,10 +226,12 @@ static config_t readconfig(char *conffile) {
 static int getquerytype(char *query) {
 	if(query == NULL)
 		return TYPE_NONE;
-	else if(!strncmp(query, "ts", 2))
+	else if(!strncmp(query, "ts=", 3))
 		return TYPE_HASH;
-	else if(!strncmp(query, "mon", 3))
+	else if(!strncmp(query, "mon=", 4))
 		return TYPE_MON;
+	else if(!strncmp(query, "css=", 4))
+		return TYPE_CSS;
 
 	return TYPE_NONE;
 }
@@ -295,9 +311,9 @@ static void querytohash(char *query, unsigned int *hash) {
 	*hash = hex2int(query + 3);
 }
 
-static void dispatch(char *query, sqlite3 *db) {
+static void dispatch(char *query, int type, sqlite3 *db) {
 	postmask_t mask;
-	int count, type = getquerytype(query), mon, pmon, year, pyear;
+	int count, mon, pmon, year, pyear;
 	time_t now = time(NULL);
 	struct tm *local;
 
@@ -358,18 +374,33 @@ static void dispatch(char *query, sqlite3 *db) {
 
 int main(void) {
 	config_t config;
-	char *query;
+	char *query, *cookie, *css = NULL, *buf;
+	int query_type, setcss = 0;
 
 	config = readconfig("/etc/blag.conf");
 
 	if(config.db == NULL)
 		return EXIT_FAILURE;
 
-	head(config.title, config.head);
-
+	cookie = getenv("HTTP_COOKIE");
 	query = getenv("QUERY_STRING");
-	dispatch(query, config.db);
+	query_type = getquerytype(query);
 
+	if(query_type == TYPE_CSS) {
+		css = query + 4;
+		if(css[0] == '\0')
+			setcss = 2; /* del cookie */
+		else
+			setcss = 1;
+	} else if(getquerytype(cookie) == TYPE_CSS) {
+		css = cookie + 4;
+		buf = strchr(css, ';');
+		if(buf)
+			buf[0] = '\0';
+	}
+
+	head(config.title, config.head, css, setcss);
+	dispatch(query, query_type, config.db);
 	tail(config.tail);
 
 	free(config.title);
