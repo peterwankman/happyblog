@@ -392,7 +392,7 @@ int main(void) {
 			setcss = 2; /* del cookie */
 		else
 			setcss = 1;
-	} else if(getquerytype(cookie) == TYPE_CSS) {
+	} else if((cookie = strstr(cookie, "css")) != NULL) {
 		css = cookie + 4;
 		buf = strchr(css, ';');
 		if(buf)
