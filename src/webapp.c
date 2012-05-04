@@ -28,6 +28,8 @@
 #define COOKIE_SET	6
 #define COOKIE_DEL	7
 
+#define ERRHEAD		"Content-Type: text/plain;charset=us-ascii\n\n"
+
 typedef struct {
 	char *title, *head, *tail, *css, *query, *self;
 	int cookie_cmd, query_type;
@@ -175,8 +177,10 @@ static int getcgivars(config_t *config) {
 	config->query = getenv("QUERY_STRING");
 	config->self = getenv("SCRIPT_NAME");
 
-	if(!cookie || !config->query || !config->self)
+	if(!config->query || !config->self) {
+		printf(ERRHEAD "Error retrieving CGI variables.\n");
 		return 0;
+	}
 
 	config->query_type = getquerytype(config->query);
 
@@ -186,10 +190,10 @@ static int getcgivars(config_t *config) {
 	if(config->query_type == TYPE_CSS) {
 		config->css = config->query + 4;
 		if(config->css[0] == '\0')
-			config->cookie_cmd = COOKIE_DEL; /* del cookie */
+			config->cookie_cmd = COOKIE_DEL;
 		else
 			config->cookie_cmd = COOKIE_SET;
-	} else if((cookie = strstr(cookie, "css")) != NULL) {
+	} else if(cookie && (cookie = strstr(cookie, "css")) != NULL) {
 		config->css = cookie + 4;
 		buf = strchr(config->css, ';');
 		if(buf)
@@ -210,7 +214,7 @@ static config_t readconfig(char *conffile) {
 	out.db = NULL;
 
 	if((fp = fopen(conffile, "r")) == NULL) {
-		printf("ERROR: '%s' not found.\n", conffile);
+		printf(ERRHEAD "ERROR: File '%s' not found.\n", conffile);
 		return out;
 	}
 
@@ -219,7 +223,7 @@ static config_t readconfig(char *conffile) {
 	delnewline(dbfile);
 
 	if(sqlite3_open(dbfile, &out.db)) {
-		printf("ERROR: Could not open database '%s': %s\n", dbfile,
+		printf(ERRHEAD "ERROR: Could not open database '%s': %s\n", dbfile,
 			sqlite3_errmsg(out.db));
 		goto clean3;
 	}
@@ -230,27 +234,24 @@ static config_t readconfig(char *conffile) {
 	if(sqlite3_step(statement) == SQLITE_ROW) {
 		buflen = sqlite3_column_bytes(statement, 0) + 1;
 		buf = (char*)sqlite3_column_text(statement, 0);
-
 		if((out.title = malloc(buflen)) == NULL) {
-			printf("ERROR: malloc(title) failed.\n");
+			printf(ERRHEAD "ERROR: malloc(title) failed.\n");
 			goto clean3;
 		}
 		strncpy(out.title, buf, buflen);
 
 		buflen = sqlite3_column_bytes(statement, 1) + 1;
 		buf = (char*)sqlite3_column_text(statement, 1);
-
 		if((out.head = malloc(buflen)) == NULL) {
-			printf("ERROR: malloc(head) failed.\n");
+			printf(ERRHEAD "ERROR: malloc(head) failed.\n");
 			goto clean2;
 		}
 		strncpy(out.head, buf, buflen);
 
 		buflen = sqlite3_column_bytes(statement, 2) + 1;
 		buf = (char*)sqlite3_column_text(statement, 2);
-
 		if((out.tail = malloc(buflen)) == NULL) {
-			printf("ERROR: malloc(tail) failed.\n");
+			printf(ERRHEAD "ERROR: malloc(tail) failed.\n");
 			goto clean;
 		}
 		strncpy(out.tail, buf, buflen);
@@ -416,7 +417,6 @@ int main(void) {
 
 	if(config.db == NULL)
 		return EXIT_FAILURE;
-
 
 	head(config);
 	dispatch(config);
