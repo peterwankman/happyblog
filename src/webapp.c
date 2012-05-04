@@ -193,7 +193,7 @@ static int getcgivars(config_t *config) {
 			config->cookie_cmd = COOKIE_DEL;
 		else
 			config->cookie_cmd = COOKIE_SET;
-	} else if(cookie && (cookie = strstr(cookie, "css")) != NULL) {
+	} else if(cookie && (cookie = strstr(cookie, "css=")) != NULL) {
 		config->css = cookie + 4;
 		buf = strchr(config->css, ';');
 		if(buf)
