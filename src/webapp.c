@@ -418,7 +418,6 @@ int main(void) {
 
 	head(config);
 	dispatch(config);
-//	dispatch(config.query, config.query_type, config.db);
 	tail(config);
 
 	free(config.title);
