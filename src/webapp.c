@@ -168,15 +168,15 @@ static int printposts(postmask_t mask, sqlite3 *db) {
 	return count;
 }
 
-static void getcgivars(config_t *config) {
+static int getcgivars(config_t *config) {
 	char *cookie, *buf;
 
 	cookie = getenv("HTTP_COOKIE");
 	config->query = getenv("QUERY_STRING");
 	config->self = getenv("SCRIPT_NAME");
 
-	if(!cookie || !config->query)
-		return;
+	if(!cookie || !config->query || !config->self)
+		return 0;
 
 	config->query_type = getquerytype(config->query);
 
@@ -195,6 +195,8 @@ static void getcgivars(config_t *config) {
 		if(buf)
 			buf[0] = '\0';
 	}
+
+	return 1;
 }
 
 static config_t readconfig(char *conffile) {
@@ -219,8 +221,7 @@ static config_t readconfig(char *conffile) {
 	if(sqlite3_open(dbfile, &out.db)) {
 		printf("ERROR: Could not open database '%s': %s\n", dbfile,
 			sqlite3_errmsg(out.db));
-		out.db = NULL;
-		return out;
+		goto clean3;
 	}
 
 	sqlite3_prepare(out.db, "SELECT title, head, tail FROM config;",
@@ -232,8 +233,7 @@ static config_t readconfig(char *conffile) {
 
 		if((out.title = malloc(buflen)) == NULL) {
 			printf("ERROR: malloc(title) failed.\n");
-			out.db = NULL;
-			return out;
+			goto clean3;
 		}
 		strncpy(out.title, buf, buflen);
 
@@ -242,10 +242,7 @@ static config_t readconfig(char *conffile) {
 
 		if((out.head = malloc(buflen)) == NULL) {
 			printf("ERROR: malloc(head) failed.\n");
-			free(out.title);
-			out.title = NULL;
-			out.db = NULL;
-			return out;
+			goto clean2;
 		}
 		strncpy(out.head, buf, buflen);
 
@@ -254,20 +251,25 @@ static config_t readconfig(char *conffile) {
 
 		if((out.tail = malloc(buflen)) == NULL) {
 			printf("ERROR: malloc(tail) failed.\n");
-			free(out.head);
-			out.head = NULL;
-			free(out.title);
-			out.title = NULL;
-			out.db = NULL;
-			return out;
+			goto clean;
 		}
 		strncpy(out.tail, buf, buflen);
 	}
 
 	sqlite3_finalize(statement);
 
-	getcgivars(&out);
+	if(!getcgivars(&out))
+		goto clean;
 
+	return out;
+clean:
+	free(out.head);
+	out.head = NULL;
+clean2:
+	free(out.title);
+	out.title = NULL;
+clean3:
+	out.db = NULL;
 	return out;
 }
 
