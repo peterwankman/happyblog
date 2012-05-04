@@ -95,7 +95,7 @@ static void printupdates(unsigned int hash, sqlite3 *db) {
 	sqlite3_bind_int(statement, 1, hash);
 
 	while(sqlite3_step(statement) == SQLITE_ROW) {
-		buf = sqlite3_column_text(statement, 0);
+		buf = (char*)sqlite3_column_text(statement, 0);
 		printf(" <p><b>Update</b>: %s\n", buf);
 	}
 
@@ -128,7 +128,7 @@ static int printposts(postmask_t mask, sqlite3 *db) {
 	while(sqlite3_step(statement) == SQLITE_ROW) {
 		posttime = sqlite3_column_int(statement, 0);
 		hash = sqlite3_column_int(statement, 1);
-		buf = sqlite3_column_text(statement, 2);
+		buf = (char*)sqlite3_column_text(statement, 2);
 
 		currtime = localtime(&posttime);
 		if(isolder(currtime, &lasttime)) {
@@ -183,7 +183,7 @@ static config_t readconfig(char *conffile) {
 
 	if(sqlite3_step(statement) == SQLITE_ROW) {
 		buflen = sqlite3_column_bytes(statement, 0) + 1;
-		buf = sqlite3_column_text(statement, 0);
+		buf = (char*)sqlite3_column_text(statement, 0);
 
 		if((out.title = malloc(buflen)) == NULL) {
 			printf("ERROR: malloc(title) failed.\n");
@@ -193,7 +193,7 @@ static config_t readconfig(char *conffile) {
 		strncpy(out.title, buf, buflen);
 
 		buflen = sqlite3_column_bytes(statement, 1) + 1;
-		buf = sqlite3_column_text(statement, 1);
+		buf = (char*)sqlite3_column_text(statement, 1);
 
 		if((out.head = malloc(buflen)) == NULL) {
 			printf("ERROR: malloc(head) failed.\n");
@@ -205,7 +205,7 @@ static config_t readconfig(char *conffile) {
 		strncpy(out.head, buf, buflen);
 
 		buflen = sqlite3_column_bytes(statement, 2) + 1;
-		buf = sqlite3_column_text(statement, 2);
+		buf = (char*)sqlite3_column_text(statement, 2);
 
 		if((out.tail = malloc(buflen)) == NULL) {
 			printf("ERROR: malloc(tail) failed.\n");

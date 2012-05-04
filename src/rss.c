@@ -81,7 +81,7 @@ static config_t readconfig(char *filename) {
 
 	if(sqlite3_step(statement) == SQLITE_ROW) {
 		buflen = sqlite3_column_bytes(statement, 0) + 1;
-		buf = sqlite3_column_text(statement, 0);
+		buf = (char*)sqlite3_column_text(statement, 0);
 
 		if((out.title = malloc(buflen)) == NULL) {
 			printf("ERROR: malloc(desc) failed.\n");
@@ -96,7 +96,7 @@ static config_t readconfig(char *filename) {
 
 	if(sqlite3_step(statement) == SQLITE_ROW) {
 		buflen = sqlite3_column_bytes(statement, 0) + 1;
-		buf = sqlite3_column_text(statement, 0);
+		buf = (char*)sqlite3_column_text(statement, 0);
 
 		if((out.desc = malloc(buflen)) == NULL) {
 			printf("ERROR: malloc(desc) failed.\n");
@@ -108,7 +108,7 @@ static config_t readconfig(char *filename) {
 		strncpy(out.desc, buf, buflen);
 
 		buflen = sqlite3_column_bytes(statement, 1) + 1;
-		buf = sqlite3_column_text(statement, 1);
+		buf = (char*)sqlite3_column_text(statement, 1);
 
 		if((out.baseurl = malloc(buflen)) == NULL) {
 			printf("ERROR: malloc(baseurl) failed.\n");
@@ -165,7 +165,7 @@ static void printposts(sqlite3 *db, char *baseurl, int num) {
 
 	while((sqlite3_step(statement) == SQLITE_ROW) && (count < num)) {
 		hash = sqlite3_column_int(statement, 0);
-		buf = sqlite3_column_text(statement, 1);
+		buf = (char*)sqlite3_column_text(statement, 1);
 		title = strip(buf);
 
 		printf("<item>\n");
