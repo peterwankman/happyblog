@@ -193,5 +193,9 @@ int main(void) {
 	printposts(config.db, config.baseurl, 16);
 	tail();
 
+	free(config.title);
+	free(config.baseurl);
+	free(config.desc);
+
 	return EXIT_SUCCESS;
 }
