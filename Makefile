@@ -5,7 +5,7 @@ SRC=src
 CGI=/usr/lib/cgi-bin
 
 CC=gcc
-CFLAGS=-O0 -Wall -I$(INC)
+CFLAGS=-O0 -Wall -ggdb -I$(INC)
 LDFLAGS=-lsqlite3
 
 RSS=-DRSS
@@ -18,19 +18,19 @@ all:
 	make $(BIN)/post
 
 $(BIN)/blag.cgi: $(SRC)/webapp.c
-	$(CC) $(CFLAGS) $(LDFLAGS) $(RSS) -o $@ $^
+	$(CC) $(CFLAGS) $(RSS) -o $@ $(LDFLAGS) $^
 
 $(BIN)/blag-rss.cgi: $(SRC)/rss.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $^
 
 $(BIN)/createdb: $(SRC)/createdb.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $^
 
 $(BIN)/initrss: $(SRC)/initrss.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $^
 
 $(BIN)/post: $(OBJ)/sha1.o $(SRC)/post.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $^
 
 $(OBJ)/sha1.o: $(SRC)/sha1.c
 	$(CC) $(CFLAGS) -c -o $@ $^
