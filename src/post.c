@@ -126,18 +126,16 @@ int main(int argc, char **argv) {
 	while(strlen(buf) > 1) {
 		oldsize = size;
 		size += strlen(buf);
-		if((post = realloc(post, size)) == NULL) {
+		if((post = realloc(post, size + 1)) == NULL) {
 			fprintf(stderr, "ERROR: realloc() failed.\n");
 			if(post)
 				free(post);
 			return 1;
 		}
-		post[oldsize] = '\0';
-
 		strcat(post, buf);
-
 		fgets(buf, MAXBUF, stdin);
 	}
+	post[size - 1] = '\0';
 
 	if(hash == 0)
 		i = 1;
@@ -145,7 +143,7 @@ int main(int argc, char **argv) {
 		i = 3;
 	for(; i < argc; i++)
 		addpost(post, size, hash, argv[i]);
-	
+
 	free(post);
 	return 0;
 }
