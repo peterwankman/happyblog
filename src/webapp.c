@@ -32,7 +32,7 @@
 
 typedef struct {
 	char *title, *head, *tail, *css, *query, *self;
-	int cookie_cmd, query_type;
+	int cookie_cmd, query_type, freeself;
 	sqlite3 *db;
 } config_t;
 
@@ -177,9 +177,15 @@ static int getcgivars(config_t *config) {
 	config->query = getenv("QUERY_STRING");
 	config->self = getenv("SCRIPT_NAME");
 
-	if(!config->query || !config->self) {
-		printf(ERRHEAD "Error retrieving CGI variables.\n");
-		return 0;
+	if(!config->self) {
+		if((config->self = malloc(2)) == NULL) {
+			printf(ERRHEAD "malloc(self) failed.\n");
+			return 0;
+		}
+		strcpy(config->self, "/");
+		config->freeself = 1;
+	} else {
+		config->freeself = 0;
 	}
 
 	config->query_type = getquerytype(config->query);
@@ -422,6 +428,8 @@ int main(void) {
 	dispatch(config);
 	tail(config);
 
+	if(config.freeself)
+		free(config.self);
 	free(config.title);
 	free(config.head);
 	free(config.tail);
