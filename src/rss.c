@@ -126,7 +126,7 @@ static config_t readconfig(char *filename) {
 	return out;
 }
 
-static char *strip(char *in) {
+static char *strip(char *in, unsigned int hash) {
 	char *out;
 	size_t len = strlen(in);
 	int i, j = 0, words = 0, skip = 0;
@@ -136,22 +136,29 @@ static char *strip(char *in) {
 
 	for(i = 0; i < len; i++) {
 		if(in[i] == '<')
-			skip = 1;
+			skip += 1;
 		if(!skip) {
 			if(in[i] == ' ')
 				words++;
 			out[j++] = in[i];
 		}
 		if(in[i] == '>')
-			skip = 0;
+			skip -= 1;
 		if(words == 6) {
 			j--;
 			break;
 		}
 	}
 	out[j] = '\0';
-	if(i < len - 1)
-		strcat(out, "...");
+	if(skip || (strlen(out) == 0)) {	/* Unbalanced <> */
+		free(out);
+		if((out = malloc(14)) == NULL)
+			return in;
+		sprintf(out, "Post %08x", hash);
+	} else {
+		if(i < len - 1)
+			strcat(out, "...");
+	}
 	return out;
 }
 
@@ -166,7 +173,7 @@ static void printposts(sqlite3 *db, char *baseurl, int num) {
 	while((sqlite3_step(statement) == SQLITE_ROW) && (count < num)) {
 		hash = sqlite3_column_int(statement, 0);
 		buf = (char*)sqlite3_column_text(statement, 1);
-		title = strip(buf);
+		title = strip(buf, hash);
 
 		printf("<item>\n");
 		printf("<title>%s</title>\n", title);
