@@ -84,12 +84,13 @@ static config_t readconfig(char *filename) {
 		buf = (char*)sqlite3_column_text(statement, 0);
 
 		if((out.title = malloc(buflen)) == NULL) {
-			printf("ERROR: malloc(desc) failed.\n");
+			printf("ERROR: malloc(title) failed.\n");
 			out.db = NULL;
 			return out;
 		}
 		strncpy(out.title, buf, buflen);
 	}
+	sqlite3_finalize(statement);
 
 	sqlite3_prepare(out.db, "SELECT desc, baseurl FROM rssconfig;",
 		MAXBUF, &statement, NULL);
@@ -186,6 +187,7 @@ static void printposts(sqlite3 *db, char *baseurl, int num) {
 			free(title);
 		count++;
 	}
+	sqlite3_finalize(statement);
 }
 
 int main(void) {
@@ -200,6 +202,7 @@ int main(void) {
 	printposts(config.db, config.baseurl, 16);
 	tail();
 
+	sqlite3_close(config.db);
 	free(config.title);
 	free(config.baseurl);
 	free(config.desc);
