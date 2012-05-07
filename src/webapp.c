@@ -23,6 +23,7 @@
 #define TYPE_HASH	2
 #define TYPE_MON	3
 #define	TYPE_CSS	4
+#define TYPE_SEAR	5
 
 #define COOKIE_NONE	5
 #define COOKIE_SET	6
@@ -39,6 +40,7 @@ typedef struct {
 typedef struct {
 	time_t start, end;
 	unsigned int hash;
+	char *string;
 	int type;
 } postmask_t;
 
@@ -100,6 +102,8 @@ static int getquerytype(char *query) {
 		return TYPE_MON;
 	else if(!strncmp(query, "css=", 4))
 		return TYPE_CSS;
+	else if(!strncmp(query, "search=", 7))
+		return TYPE_SEAR;
 
 	return TYPE_NONE;
 }
@@ -125,7 +129,7 @@ static int printposts(postmask_t mask, sqlite3 *db) {
 	int newblock = 1, hash, count = 0;
 	time_t posttime;
 	struct tm *currtime, lasttime;
-	char *buf, timebuf[MAXBUF];
+	char *buf, timebuf[MAXBUF], searchbuf[MAXBUF];
 
 	if(mask.type == TYPE_TIME) {
 		sqlite3_prepare(db, "SELECT time, hash, entry FROM entries WHERE time "
@@ -137,8 +141,13 @@ static int printposts(postmask_t mask, sqlite3 *db) {
 		sqlite3_prepare(db, "SELECT time, hash, entry FROM entries WHERE hash "
 			"= :hsh ORDER BY time DESC;", MAXBUF, &statement, NULL);
 		sqlite3_bind_int(statement, 1, mask.hash);
-	} else {
-		printf("NIL: %d\n", mask.type);
+	} else if(mask.type == TYPE_SEAR) {
+		sqlite3_prepare(db, "SELECT time, hash, entry FROM entries WHERE "
+			"entry LIKE :src ORDER BY time DESC;", 
+			MAXBUF, &statement, NULL);
+		snprintf(searchbuf, MAXBUF, "%%%s%%", mask.string);
+		sqlite3_bind_text(statement, 1, searchbuf, 
+			strlen(searchbuf), SQLITE_STATIC);
 	}
 
 	newblock = 1;
@@ -358,6 +367,10 @@ static void dispatch(config_t conf) {
 		case TYPE_HASH:
 			querytohash(conf.query, &mask.hash);
 			mask.type = TYPE_HASH;
+			break;
+		case TYPE_SEAR:
+			mask.type = TYPE_SEAR;
+			mask.string = conf.query + 7;
 			break;
 		default:
 			mask.end = now;
