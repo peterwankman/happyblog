@@ -71,6 +71,7 @@ static void addpost(char *post, size_t size, unsigned int uhash, char *dbname) {
 	posttime = time(NULL);
 
 	hash = sha1(post, size);
+	free(hash.string);
 
 	if(uhash == 0) {
 		if(sqlite3_prepare(db, "INSERT INTO entries (id, hash, time, entry) "
@@ -131,6 +132,8 @@ int main(int argc, char **argv) {
 			if(post)
 				free(post);
 			return 1;
+		} else {
+			memset(post + oldsize, 0, size - oldsize + 1);
 		}
 		strcat(post, buf);
 		fgets(buf, MAXBUF, stdin);
