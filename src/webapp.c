@@ -195,11 +195,8 @@ static void tail(config_t conf) {
 	struct tm *local;
 	int mon, pmon, year, pyear;
 
-	printf("<div align=right>%s</div>\n", conf.tail);
 	printf("<p><div align=center>");
-
 	local = localtime(&now);
-
 	if(conf.query_type == TYPE_MON) {
 		querytotime(conf.query, &year, &mon, NULL, NULL);
 		pyear = year;
@@ -226,8 +223,8 @@ static void tail(config_t conf) {
 		printf("<a href=\"?mon=%04d%02d\">ganzer Monat</a>",
 			local->tm_year + 1900, local->tm_mon + 1);
 	}
-
 	printf("</div>\n");
+	printf("<div align=right>%s</div>\n", conf.tail);
 }
 
 static void printupdates(unsigned int hash, sqlite3 *db) {
