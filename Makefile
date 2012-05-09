@@ -17,10 +17,10 @@ all:
 	make $(BIN)/initrss
 	make $(BIN)/post
 
-$(BIN)/blag.cgi: $(SRC)/webapp.c
+$(BIN)/blag.cgi: $(OBJ)/help.o $(SRC)/webapp.c
 	$(CC) $(CFLAGS) $(RSS) -o $@ $(LDFLAGS) $^
 
-$(BIN)/blag-rss.cgi: $(SRC)/rss.c
+$(BIN)/blag-rss.cgi: $(OBJ)/help.o $(SRC)/rss.c
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $^
 
 $(BIN)/createdb: $(SRC)/createdb.c
@@ -29,10 +29,13 @@ $(BIN)/createdb: $(SRC)/createdb.c
 $(BIN)/initrss: $(SRC)/initrss.c
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $^
 
-$(BIN)/post: $(OBJ)/sha1.o $(SRC)/post.c
+$(BIN)/post: $(OBJ)/sha1.o $(OBJ)/help.o $(SRC)/post.c
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $^
 
 $(OBJ)/sha1.o: $(SRC)/sha1.c
+	$(CC) $(CFLAGS) -c -o $@ $^
+
+$(OBJ)/help.o: $(SRC)/help.c
 	$(CC) $(CFLAGS) -c -o $@ $^
 
 install: $(BIN)/blag.cgi

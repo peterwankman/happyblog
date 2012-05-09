@@ -16,42 +16,13 @@
 
 #include <sqlite3.h>
 
+#include "help.h"
 #include "sha1.h"
 
 #define MAXBUF 512
 
 static void usage(char *argv) {
 	printf("USAGE: %s [-u hash] [database] ...\n", argv);
-}
-
-static unsigned int hex2int(char *in) {
-	unsigned int out = 0;
-	int i;
-
-	for(i = 0; i < 8; i++) {
-		out <<= 4;
-
-		switch(in[i]) {
-			case '0': out += 0; break;
-			case '1': out += 1; break;
-			case '2': out += 2; break;
-			case '3': out += 3; break;
-			case '4': out += 4; break;
-			case '5': out += 5; break;
-			case '6': out += 6; break;
-			case '7': out += 7; break;
-			case '8': out += 8; break;
-			case '9': out += 9; break;
-			case 'a': out += 10; break;
-			case 'b': out += 11; break;
-			case 'c': out += 12; break;
-			case 'd': out += 13; break;
-			case 'e': out += 14; break;
-			case 'f': out += 15; break;
-		}
-	}
-
-	return out;
 }
 
 static void addpost(char *post, size_t size, unsigned int uhash, char *dbname) {
@@ -120,7 +91,10 @@ int main(int argc, char **argv) {
 			usage(argv[0]);
 			return EXIT_FAILURE;
 		}
-		hash = hex2int(argv[2]);
+		if(hextoint(argv[2], &hash) != H2I_OK) {
+			fprintf(stderr, "ERROR: Invalid hash.\n");
+			return EXIT_FAILURE;
+		}
 	}
 
 	fgets(buf, MAXBUF, stdin);

@@ -15,6 +15,8 @@
 
 #include <sqlite3.h>
 
+#include "help.h"
+
 #define MAXBUF	512
 
 typedef struct {
@@ -24,13 +26,6 @@ typedef struct {
 
 	sqlite3 *db;
 } config_t;
-
-void delnewline(char *in) {
-	int i;
-	for(i = 0; i < strlen(in); i++)
-		if(in[i] == '\n')
-			in[i] = '\0';
-}
 
 static char *strip(char *in, unsigned int hash) {
 	char *out;

@@ -16,6 +16,8 @@
 
 #include <sqlite3.h>
 
+#include "help.h"
+
 #define MAXBUF 512
 
 #define TYPE_NONE	0
@@ -44,50 +46,14 @@ typedef struct {
 	int type;
 } postmask_t;
 
-static void delnewline(char *in) {
-	int i;
-	for(i = 0; i < strlen(in); i++)
-		if(in[i] == '\n')
-			in[i] = '\0';
-}
-
-static unsigned int hextoint(char *in) {
-	unsigned int out = 0;
-	int i;
-
-	for(i = 0; i < 8; i++) {
-		out <<= 4;
-
-		switch(in[i]) {
-			case '0': out += 0; break;
-			case '1': out += 1; break;
-			case '2': out += 2; break;
-			case '3': out += 3; break;
-			case '4': out += 4; break;
-			case '5': out += 5; break;
-			case '6': out += 6; break;
-			case '7': out += 7; break;
-			case '8': out += 8; break;
-			case '9': out += 9; break;
-			case 'a': out += 10; break;
-			case 'b': out += 11; break;
-			case 'c': out += 12; break;
-			case 'd': out += 13; break;
-			case 'e': out += 14; break;
-			case 'f': out += 15; break;
-		}
-	}
-
-	return out;
-}
-
 static void querytohash(char *query, unsigned int *hash) {
 	*hash = 0;
 
 	if(strlen(query) < 11)
 		return;
 
-	*hash = hextoint(query + 3);
+	if(hextoint(query + 3, hash) != H2I_OK)
+		return;
 }
 
 static void querytotime(char *query, int *year, int *mon,
