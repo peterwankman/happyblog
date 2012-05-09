@@ -44,6 +44,124 @@ typedef struct {
 	int type;
 } postmask_t;
 
+static void delnewline(char *in) {
+	int i;
+	for(i = 0; i < strlen(in); i++)
+		if(in[i] == '\n')
+			in[i] = '\0';
+}
+
+static unsigned int hextoint(char *in) {
+	unsigned int out = 0;
+	int i;
+
+	for(i = 0; i < 8; i++) {
+		out <<= 4;
+
+		switch(in[i]) {
+			case '0': out += 0; break;
+			case '1': out += 1; break;
+			case '2': out += 2; break;
+			case '3': out += 3; break;
+			case '4': out += 4; break;
+			case '5': out += 5; break;
+			case '6': out += 6; break;
+			case '7': out += 7; break;
+			case '8': out += 8; break;
+			case '9': out += 9; break;
+			case 'a': out += 10; break;
+			case 'b': out += 11; break;
+			case 'c': out += 12; break;
+			case 'd': out += 13; break;
+			case 'e': out += 14; break;
+			case 'f': out += 15; break;
+		}
+	}
+
+	return out;
+}
+
+static void querytohash(char *query, unsigned int *hash) {
+	*hash = 0;
+
+	if(strlen(query) < 11)
+		return;
+
+	*hash = hextoint(query + 3);
+}
+
+static void querytotime(char *query, int *year, int *mon,
+						time_t *start, time_t *end) {
+	int datestr, bmon, byear;
+	struct tm *buf;
+	time_t now;
+
+	if(start)
+		*start = 0;
+	if(end)
+		*end = 0;
+
+	if(strlen(query) < 9)
+		return;
+
+	datestr = atoi(query + 4);
+	bmon = datestr % 100;
+	byear = datestr / 100;
+
+	if(year)
+		*year = byear;
+	if(mon)
+		*mon = bmon;
+
+	if(start && end) {
+		time(&now);
+		buf = localtime(&now);
+
+		buf->tm_sec = 0;
+		buf->tm_min = 0;
+		buf->tm_hour = 0;
+		buf->tm_mday = 1;
+		buf->tm_mon = bmon - 1;
+		buf->tm_year = byear - 1900;
+
+		*start = mktime(buf);
+
+		buf->tm_mon++;
+
+		if(buf->tm_mon > 11) {
+			buf->tm_mon = 0;
+			buf->tm_year++;
+		}
+
+		*end = mktime(buf);
+	}
+}
+
+static int getquerytype(char *query) {
+	if(query == NULL)
+		return TYPE_NONE;
+	else if(!strncmp(query, "ts=", 3))
+		return TYPE_HASH;
+	else if(!strncmp(query, "mon=", 4))
+		return TYPE_MON;
+	else if(!strncmp(query, "css=", 4))
+		return TYPE_CSS;
+	else if(!strncmp(query, "search=", 7))
+		return TYPE_SEAR;
+
+	return TYPE_NONE;
+}
+
+static int isolder(struct tm *curr, struct tm *last) {
+	if(!last)
+		return 1;
+	if(curr->tm_year < last->tm_year)
+		return 1;
+	if(curr->tm_yday < last->tm_yday)
+		return 1;
+	return 0;
+}
+
 static void head(config_t conf) {
 	if((conf.cookie_cmd != COOKIE_NONE) && conf.css) {
 		printf("Set-Cookie: css=");
@@ -73,39 +191,43 @@ static void head(config_t conf) {
 }
 
 static void tail(config_t conf) {
+	time_t now = time(NULL);
+	struct tm *local;
+	int mon, pmon, year, pyear;
+
 	printf("<div align=right>%s</div>\n", conf.tail);
-}
+	printf("<p><div align=center>");
 
-static void delnewline(char *in) {
-	int i;
-	for(i = 0; i < strlen(in); i++)
-		if(in[i] == '\n')
-			in[i] = '\0';
-}
+	local = localtime(&now);
 
-static int isolder(struct tm *curr, struct tm *last) {
-	if(!last)
-		return 1;
-	if(curr->tm_year < last->tm_year)
-		return 1;
-	if(curr->tm_yday < last->tm_yday)
-		return 1;
-	return 0;
-}
+	if(conf.query_type == TYPE_MON) {
+		querytotime(conf.query, &year, &mon, NULL, NULL);
+		pyear = year;
+		pmon = mon - 1;
+		if(pmon == 0) {
+			pmon = 12;
+			pyear--;
+		}
+		printf("<a href=\"?mon=%04d%02d\">früher</a> -- ",
+			pyear, pmon);
 
-static int getquerytype(char *query) {
-	if(query == NULL)
-		return TYPE_NONE;
-	else if(!strncmp(query, "ts=", 3))
-		return TYPE_HASH;
-	else if(!strncmp(query, "mon=", 4))
-		return TYPE_MON;
-	else if(!strncmp(query, "css=", 4))
-		return TYPE_CSS;
-	else if(!strncmp(query, "search=", 7))
-		return TYPE_SEAR;
+		printf("<a href=\"?mon=%04d%02d\">aktuell</a> -- ",
+			local->tm_year + 1900, local->tm_mon + 1);
 
-	return TYPE_NONE;
+		pyear = year;
+		pmon = mon + 1;
+		if(pmon > 12) {
+			pmon = 1;
+			pyear++;
+		}
+		printf("<a href=\"?mon=%04d%02d\">später</a>",
+			pyear, pmon);
+	} else {
+		printf("<a href=\"?mon=%04d%02d\">ganzer Monat</a>",
+			local->tm_year + 1900, local->tm_mon + 1);
+	}
+
+	printf("</div>\n");
 }
 
 static void printupdates(unsigned int hash, sqlite3 *db) {
@@ -177,6 +299,38 @@ static int printposts(postmask_t mask, sqlite3 *db) {
 	if(count)
 		printf("</ul>\n\n");
 	return count;
+}
+
+static void dispatch(config_t conf) {
+	postmask_t mask;
+	int count;
+	time_t now = time(NULL);
+
+	switch(conf.query_type) {
+		case TYPE_MON:
+			querytotime(conf.query, NULL, NULL, &mask.start, &mask.end);
+			mask.type = TYPE_TIME;
+			break;
+		case TYPE_HASH:
+			querytohash(conf.query, &mask.hash);
+			mask.type = TYPE_HASH;
+			break;
+		case TYPE_SEAR:
+			mask.type = TYPE_SEAR;
+			mask.string = conf.query + 7;
+			break;
+		default:
+			mask.end = now;
+			mask.start = mask.end - 345600;
+			mask.type = TYPE_TIME;
+			break;
+	}
+
+	count = printposts(mask, conf.db);
+
+	if(!count) {
+		printf("<p>No entries found.\n\n");
+	}
 }
 
 static int getcgivars(config_t *config) {
@@ -276,146 +430,6 @@ clean2:
 clean3:
 	out.db = NULL;
 	return out;
-}
-
-static unsigned int hex2int(char *in) {
-	unsigned int out = 0;
-	int i;
-
-	for(i = 0; i < 8; i++) {
-		out <<= 4;
-
-		switch(in[i]) {
-			case '0': out += 0; break;
-			case '1': out += 1; break;
-			case '2': out += 2; break;
-			case '3': out += 3; break;
-			case '4': out += 4; break;
-			case '5': out += 5; break;
-			case '6': out += 6; break;
-			case '7': out += 7; break;
-			case '8': out += 8; break;
-			case '9': out += 9; break;
-			case 'a': out += 10; break;
-			case 'b': out += 11; break;
-			case 'c': out += 12; break;
-			case 'd': out += 13; break;
-			case 'e': out += 14; break;
-			case 'f': out += 15; break;
-		}
-	}
-
-	return out;
-}
-
-static void querytotime(char *query, int *year, int *mon, 
-						time_t *start, time_t *end) {
-	int datestr;
-	struct tm *buf;
-	time_t now;
-
-	*start = *end = 0;
-
-	if(strlen(query) < 9)
-		return;
-
-	datestr = atoi(query + 4);
-	*mon = datestr % 100;
-	*year = datestr / 100;
-
-	time(&now);
-	buf = localtime(&now);
-
-	buf->tm_sec = 0;
-	buf->tm_min = 0;
-	buf->tm_hour = 0;
-	buf->tm_mday = 1;
-	buf->tm_mon = *mon - 1;
-	buf->tm_year = *year - 1900;
-
-	*start = mktime(buf);
-
-	buf->tm_mon++;
-	if(buf->tm_mon > 11) {
-		buf->tm_mon = 0;
-		buf->tm_year++;
-	}
-
-	*end = mktime(buf);
-}
-
-static void querytohash(char *query, unsigned int *hash) {
-	*hash = 0;
-
-	if(strlen(query) < 11)
-		return;
-
-	*hash = hex2int(query + 3);
-}
-
-static void dispatch(config_t conf) {
-	postmask_t mask;
-	int count, mon, pmon, year, pyear;
-	time_t now = time(NULL);
-	struct tm *local;
-
-	switch(conf.query_type) {
-		case TYPE_MON:
-			querytotime(conf.query, &year, &mon, &mask.start, &mask.end);
-			mask.type = TYPE_TIME;
-			break;
-		case TYPE_HASH:
-			querytohash(conf.query, &mask.hash);
-			mask.type = TYPE_HASH;
-			break;
-		case TYPE_SEAR:
-			mask.type = TYPE_SEAR;
-			mask.string = conf.query + 7;
-			break;
-		default:
-			mask.end = now;
-			mask.start = mask.end - 345600;
-			mask.type = TYPE_TIME;
-			break;
-	}
-
-	count = printposts(mask, conf.db);
-					
-	if(!count) {
-		printf("<p>No entries found.\n\n");
-	}
-	
-	printf("<p><div align=center>");
-
-	local = localtime(&now);
-
-	if(conf.query_type == TYPE_MON) {
-		pyear = year;
-		pmon = mon - 1;
-		if(pmon == 0) {
-			pmon = 12;
-			pyear--;
-		}
-		printf("<a href=\"?mon=%04d%02d\">früher</a> -- ",
-			pyear, pmon);
-
-		printf("<a href=\"?mon=%04d%02d\">aktuell</a> -- ",
-			local->tm_year + 1900, local->tm_mon + 1);
-
-		pyear = year;
-		pmon = mon + 1;
-		if(pmon > 12) {
-			pmon = 1;
-			pyear++;
-		}
-		printf("<a href=\"?mon=%04d%02d\">später</a>", 
-			pyear, pmon);
-	} else {
-		printf("<a href=\"?mon=%04d%02d\">ganzer Monat</a>",
-			local->tm_year + 1900, local->tm_mon + 1);
-	}
-
-	printf("</div>\n");
 }
 
 int main(void) {

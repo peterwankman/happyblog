@@ -32,6 +32,42 @@ void delnewline(char *in) {
 			in[i] = '\0';
 }
 
+static char *strip(char *in, unsigned int hash) {
+	char *out;
+	size_t len = strlen(in);
+	int i, j = 0, words = 0, skip = 0;
+
+	if((out = malloc(len + 4)) == NULL)
+		return in;
+
+	for(i = 0; i < len; i++) {
+		if(in[i] == '<')
+			skip += 1;
+		if(!skip) {
+			if(in[i] == ' ')
+				words++;
+			out[j++] = in[i];
+		}
+		if(in[i] == '>')
+			skip -= 1;
+		if(words == 6) {
+			j--;
+			break;
+		}
+	}
+	out[j] = '\0';
+	if(skip || (strlen(out) == 0)) {	/* Unbalanced <> */
+		free(out);
+		if((out = malloc(14)) == NULL)
+			return in;
+		sprintf(out, "Post %08x", hash);
+	} else {
+		if(i < len - 1)
+			strcat(out, "...");
+	}
+	return out;
+}
+
 static void head(char *title, char *baseurl, char *desc) {
 	printf("Content-Type: text/xml;charset=utf-8\r\n\r\n");
 
@@ -48,6 +84,33 @@ static void head(char *title, char *baseurl, char *desc) {
 static void tail(void) {
 	printf("</channel>\n");
 	printf("</rss>\n");
+}
+
+static void printposts(sqlite3 *db, char *baseurl, int num) {
+	sqlite3_stmt *statement;
+	int count = 0, hash;
+	char *buf, *title;
+
+	sqlite3_prepare(db, "SELECT hash, entry FROM entries "
+		"ORDER BY time DESC;", MAXBUF, &statement, NULL);
+
+	while((sqlite3_step(statement) == SQLITE_ROW) && (count < num)) {
+		hash = sqlite3_column_int(statement, 0);
+		buf = (char*)sqlite3_column_text(statement, 1);
+		title = strip(buf, hash);
+
+		printf("<item>\n");
+		printf("<title>%s</title>\n", title);
+		printf("<link>%s?ts=%08x</link>\n", baseurl, hash);
+		printf("<guid>%s?ts=%08x</guid>\n", baseurl, hash);
+		printf("<description><![CDATA[%s]]></description>\n", buf);
+		printf("</item>\n\n");
+
+		if(title && (title != buf))
+			free(title);
+		count++;
+	}
+	sqlite3_finalize(statement);
 }
 
 static config_t readconfig(char *filename) {
@@ -125,69 +188,6 @@ static config_t readconfig(char *filename) {
 
 	sqlite3_finalize(statement);
 	return out;
-}
-
-static char *strip(char *in, unsigned int hash) {
-	char *out;
-	size_t len = strlen(in);
-	int i, j = 0, words = 0, skip = 0;
-
-	if((out = malloc(len + 4)) == NULL)
-		return in;
-
-	for(i = 0; i < len; i++) {
-		if(in[i] == '<')
-			skip += 1;
-		if(!skip) {
-			if(in[i] == ' ')
-				words++;
-			out[j++] = in[i];
-		}
-		if(in[i] == '>')
-			skip -= 1;
-		if(words == 6) {
-			j--;
-			break;
-		}
-	}
-	out[j] = '\0';
-	if(skip || (strlen(out) == 0)) {	/* Unbalanced <> */
-		free(out);
-		if((out = malloc(14)) == NULL)
-			return in;
-		sprintf(out, "Post %08x", hash);
-	} else {
-		if(i < len - 1)
-			strcat(out, "...");
-	}
-	return out;
-}
-
-static void printposts(sqlite3 *db, char *baseurl, int num) {
-	sqlite3_stmt *statement;
-	int count = 0, hash;
-	char *buf, *title;
-
-	sqlite3_prepare(db, "SELECT hash, entry FROM entries "
-		"ORDER BY time DESC;", MAXBUF, &statement, NULL);
-
-	while((sqlite3_step(statement) == SQLITE_ROW) && (count < num)) {
-		hash = sqlite3_column_int(statement, 0);
-		buf = (char*)sqlite3_column_text(statement, 1);
-		title = strip(buf, hash);
-
-		printf("<item>\n");
-		printf("<title>%s</title>\n", title);
-		printf("<link>%s?ts=%08x</link>\n", baseurl, hash);
-		printf("<guid>%s?ts=%08x</guid>\n", baseurl, hash);
-		printf("<description><![CDATA[%s]]></description>\n", buf);
-		printf("</item>\n\n");
-
-		if(title && (title != buf))
-			free(title);
-		count++;
-	}
-	sqlite3_finalize(statement);
 }
 
 int main(void) {
