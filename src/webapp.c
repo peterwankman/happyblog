@@ -13,24 +13,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
 #include <sqlite3.h>
-
 #include "help.h"
 
 #define MAXBUF 512
-
 #define TYPE_NONE	0
 #define TYPE_TIME	1
 #define TYPE_HASH	2
 #define TYPE_MON	3
 #define	TYPE_CSS	4
 #define TYPE_SEAR	5
-
 #define COOKIE_NONE	5
 #define COOKIE_SET	6
 #define COOKIE_DEL	7
-
 #define ERRHEAD		"Content-Type: text/plain;charset=us-ascii\n\n"
 
 typedef struct {
@@ -48,10 +43,8 @@ typedef struct {
 
 static void querytohash(char *query, unsigned int *hash) {
 	*hash = 0;
-
 	if(strlen(query) < 11)
 		return;
-
 	if(hextoint(query + 3, hash) != H2I_OK)
 		return;
 }
@@ -66,7 +59,6 @@ static void querytotime(char *query, int *year, int *mon,
 		*start = 0;
 	if(end)
 		*end = 0;
-
 	if(strlen(query) < 9)
 		return;
 
@@ -82,7 +74,6 @@ static void querytotime(char *query, int *year, int *mon,
 	if(start && end) {
 		time(&now);
 		buf = localtime(&now);
-
 		buf->tm_sec = 0;
 		buf->tm_min = 0;
 		buf->tm_hour = 0;
@@ -91,9 +82,7 @@ static void querytotime(char *query, int *year, int *mon,
 		buf->tm_year = byear - 1900;
 
 		*start = mktime(buf);
-
 		buf->tm_mon++;
-
 		if(buf->tm_mon > 11) {
 			buf->tm_mon = 0;
 			buf->tm_year++;
@@ -114,7 +103,6 @@ static int getquerytype(char *query) {
 		return TYPE_CSS;
 	else if(!strncmp(query, "search=", 7))
 		return TYPE_SEAR;
-
 	return TYPE_NONE;
 }
 
@@ -136,20 +124,16 @@ static void head(config_t conf) {
 		else
 			printf("%s\r\n", conf.css);
 	}
-
 	printf("Content-Type: text/html;charset=UTF-8\r\n\r\n");
 	printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML "
 		"4.0 Transitional//EN\">\n");
-
 	if(conf.css && conf.css[0])
 		printf("<link rel=stylesheet type=\"text/css\" href=\"%s\">\n", 
 			conf.css);
-
 #ifdef RSS
 	printf("<link rel=\"alternate\" type=\"application/rss+xml\" "
 		"title=\"RSS-Feed\" href=\"blag-rss.cgi\">\n");
 #endif
-
 	printf("\n<title>%s</title>", conf.title);
 	printf("<h2><a href=\"%s\" style=\"text-decoration:none;"
 		"color:black\">%s</a></h2>\n", conf.self?conf.self:"/", conf.title);
@@ -288,9 +272,7 @@ static void dispatch(config_t conf) {
 			mask.type = TYPE_TIME;
 			break;
 	}
-
 	count = printposts(mask, conf.db);
-
 	if(!count) {
 		printf("<p>No entries found.\n\n");
 	}
@@ -302,9 +284,7 @@ static int getcgivars(config_t *config) {
 	cookie = getenv("HTTP_COOKIE");
 	config->query = getenv("QUERY_STRING");
 	config->self = getenv("SCRIPT_NAME");
-
 	config->query_type = getquerytype(config->query);
-
 	config->css = NULL;
 	config->cookie_cmd = COOKIE_NONE;
 
@@ -351,7 +331,6 @@ static config_t readconfig(char *conffile) {
 
 	sqlite3_prepare(out.db, "SELECT title, head, tail FROM config;",
 		MAXBUF, &statement, NULL);
-
 	if(sqlite3_step(statement) == SQLITE_ROW) {
 		buflen = sqlite3_column_bytes(statement, 0) + 1;
 		buf = (char*)sqlite3_column_text(statement, 0);
@@ -377,7 +356,6 @@ static config_t readconfig(char *conffile) {
 		}
 		strncpy(out.tail, buf, buflen);
 	}
-
 	sqlite3_finalize(statement);
 
 	if(!getcgivars(&out))
@@ -399,7 +377,6 @@ int main(void) {
 	config_t config;
 
 	config = readconfig("/etc/blag.conf");
-
 	if(config.db == NULL)
 		return EXIT_FAILURE;
 
@@ -410,7 +387,6 @@ int main(void) {
 	free(config.title);
 	free(config.head);
 	free(config.tail);
-
 	sqlite3_close(config.db);
 	return EXIT_SUCCESS;
 }
