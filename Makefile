@@ -8,8 +8,6 @@ CC=gcc
 CFLAGS=-O0 -Wall -ggdb -I$(INC)
 LDFLAGS=-lsqlite3
 
-RSS=-DRSS
-
 all:
 	make $(BIN)/blag.cgi
 	make $(BIN)/blag-rss.cgi
@@ -17,7 +15,7 @@ all:
 	make $(BIN)/post
 
 $(BIN)/blag.cgi: $(OBJ)/help.o $(SRC)/webapp.c
-	$(CC) $(CFLAGS) $(RSS) -o $@ $(LDFLAGS) $^
+	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $^
 
 $(BIN)/blag-rss.cgi: $(OBJ)/help.o $(SRC)/rss.c
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $^

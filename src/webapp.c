@@ -130,10 +130,8 @@ static void head(config_t conf) {
 	if(conf.css && conf.css[0])
 		printf("<link rel=stylesheet type=\"text/css\" href=\"%s\">\n", 
 			conf.css);
-#ifdef RSS
 	printf("<link rel=\"alternate\" type=\"application/rss+xml\" "
 		"title=\"RSS-Feed\" href=\"blag-rss.cgi\">\n");
-#endif
 	printf("\n<title>%s</title>", conf.title);
 	printf("<h2><a href=\"%s\" style=\"text-decoration:none;"
 		"color:black\">%s</a></h2>\n", conf.self?conf.self:"/", conf.title);
