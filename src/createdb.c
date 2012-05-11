@@ -18,7 +18,8 @@
 
 #define MAXBUF 512
 
-static void filltable(sqlite3 *db, char *title, char *head, char *tail) {
+static void filltable(sqlite3 *db, char *desc, char *url, 
+						char *title, char *head, char *tail) {
 	sqlite3_stmt *statement;
 
 	if(sqlite3_prepare(db, "INSERT INTO config (title, head, tail) "
@@ -30,6 +31,19 @@ static void filltable(sqlite3 *db, char *title, char *head, char *tail) {
 	sqlite3_bind_text(statement, 1, title, strlen(title), SQLITE_STATIC);
 	sqlite3_bind_text(statement, 2, head, strlen(head), SQLITE_STATIC);
 	sqlite3_bind_text(statement, 3, tail, strlen(tail), SQLITE_STATIC);
+
+	sqlite3_step(statement);
+
+	sqlite3_finalize(statement);
+
+	if(sqlite3_prepare(db, "INSERT INTO rssconfig (desc, baseurl) "
+		"VALUES (:dsc, :url);", MAXBUF, &statement, NULL) != SQLITE_OK) {
+		fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(db));
+		return;
+	}
+
+	sqlite3_bind_text(statement, 1, desc, strlen(desc), SQLITE_STATIC);
+	sqlite3_bind_text(statement, 2, url, strlen(url), SQLITE_STATIC);
 
 	sqlite3_step(statement);
 
@@ -59,6 +73,13 @@ static void mktables(sqlite3 *db) {
 		sqlite3_free(errmsg);
 		return;
 	}
+
+	if(sqlite3_exec(db, "CREATE TABLE rssconfig (desc TEXT, baseurl TEXT);",
+		NULL, 0, &errmsg) != SQLITE_OK) {
+		fprintf(stderr, "SQLite error: %s\n", errmsg);
+		sqlite3_free(errmsg);
+		return;
+	}
 }
 
 static int delifexists(char *filename) {
@@ -78,7 +99,15 @@ static int delifexists(char *filename) {
 }
 
 static void usage(char *argv) {
-	printf("USAGE: %s [-h] [-t title] [-e head] [-f foot] [-o filename]\n", argv);
+	printf("USAGE: %s [-b] [-d] [-e] [-f] [-h] [-o] [-t] ...\n", argv);
+	printf("Options:\n");
+	printf("\t-b Base URL\n");
+	printf("\t-d Deacription\n");
+	printf("\t-e Head\n");
+	printf("\t-f Foot\n");
+	printf("\t-h This help\n");
+	printf("\t-o Output filename\n");
+	printf("\t-t Title\n");
 }
 
 int main(int argc, char **argv) {
@@ -86,12 +115,16 @@ int main(int argc, char **argv) {
 	char *title = "Blog";
 	char *head = "";
 	char *tail = "";
+	char *desc = "";
+	char *url = "";
 	int opt;
 	sqlite3 *db;
 
-	while((opt = getopt(argc, argv, "he:f:o:t:")) != -1) {
+	while((opt = getopt(argc, argv, "hb:d:e:f:o:t:")) != -1) {
 		switch(opt) {
 			case 'h': usage(argv[0]); return EXIT_SUCCESS;
+			case 'b': url = optarg; break;
+			case 'd': desc = optarg; break;
 			case 'e': head = optarg; break;
 			case 'f': tail = optarg; break;
 			case 'o': filename = optarg; break;
@@ -112,7 +145,7 @@ int main(int argc, char **argv) {
 	}
 
 	mktables(db);
-	filltable(db, title, head, tail);
+	filltable(db, desc, url, title, head, tail);
 	sqlite3_close(db);
 
 	return EXIT_SUCCESS;

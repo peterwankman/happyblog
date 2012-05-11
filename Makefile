@@ -14,7 +14,6 @@ all:
 	make $(BIN)/blag.cgi
 	make $(BIN)/blag-rss.cgi
 	make $(BIN)/createdb
-	make $(BIN)/initrss
 	make $(BIN)/post
 
 $(BIN)/blag.cgi: $(OBJ)/help.o $(SRC)/webapp.c
@@ -24,9 +23,6 @@ $(BIN)/blag-rss.cgi: $(OBJ)/help.o $(SRC)/rss.c
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $^
 
 $(BIN)/createdb: $(SRC)/createdb.c
-	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $^
-
-$(BIN)/initrss: $(SRC)/initrss.c
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $^
 
 $(BIN)/post: $(OBJ)/sha1.o $(OBJ)/help.o $(SRC)/post.c

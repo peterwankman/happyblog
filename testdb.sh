@@ -6,5 +6,4 @@ TAIL="Proudly made without PHP, Java, Perl, MySQL and Postgres<br><a href=impres
 DESC="Ein Platz für die tiefgehenden Gedanken und Gefühle von Peter"
 URL="http://chelloveck.vellocet.net/cgi-bin/blag.cgi"
 
-bin/createdb -t "$TITLE" -e "$HEAD" -f "$TAIL" -o $1
-bin/initrss -d "$DESC" -b "$URL" -o $1
+bin/createdb -t "$TITLE" -e "$HEAD" -f "$TAIL" -d "$DESC" -b "$URL" -o $1
