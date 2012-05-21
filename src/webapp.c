@@ -122,7 +122,7 @@ static void head(config_t conf) {
 		if(conf.cookie_cmd == COOKIE_DEL)
 			printf(" ; expires=Sat, 1-Jan-2000 00:00:00 GMT\r\n");
 		else
-			printf("%s\r\n", conf.css);
+			printf("%s; expires=Sun, 17-Jan-2038 19:14:07 GMT\r\n", conf.css);
 	}
 	printf("Content-Type: text/html;charset=UTF-8\r\n\r\n");
 	printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML "
