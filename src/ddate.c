@@ -73,7 +73,7 @@ static struct disc_time convert(int nday, int nyear)
   
  }
 
-void ddate(char *buffer, struct tm *eris)
+void ddate(char *buffer, size_t maxsize, struct tm *eris)
 { char *days[5] = { "Sweetmorn",
                     "Boomtime",
                     "Pungenday",
@@ -88,10 +88,10 @@ void ddate(char *buffer, struct tm *eris)
   };
   struct disc_time tick;
   tick=convert(eris->tm_yday, eris->tm_year);
-  if (tick.day==-1) sprintf(buffer, "St. Tib's Day in the YOLD %d",tick.year);
+  if (tick.day==-1) snprintf(buffer, maxsize, "St. Tib's Day in the YOLD %d",tick.year);
   else
     { tick.day++;
-      sprintf(buffer, "%s, %d%s day of %s - YOLD %d", days[tick.yday%5], tick.day, ending(tick.day),seasons[tick.season], tick.year);
+      snprintf(buffer, maxsize, "%s, %d%s day of %s - YOLD %d", days[tick.yday%5], tick.day, ending(tick.day),seasons[tick.season], tick.year);
     }
 }
 

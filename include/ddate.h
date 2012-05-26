@@ -13,6 +13,6 @@
 #define DDATE_H
 
 
-void ddate(char *, struct tm *eris);
+void ddate(char *, size_t, struct tm *eris);
 
 #endif

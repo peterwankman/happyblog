@@ -227,7 +227,11 @@ static int printposts(postmask_t mask, sqlite3 *db) {
 
 		currtime = localtime(&posttime);
 		if(isolder(currtime, &lasttime)) {
-			ddate(timebuf, currtime);
+			#ifdef DDATE
+				ddate(timebuf, MAXBUF, currtime);
+			#else
+				strftime(timebuf, MAXBUF, "%a %b %d %Y", currtime);
+			#endif
 			if(!newblock) {
 				printf("</ul>\n\n");
 			} else {

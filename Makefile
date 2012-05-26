@@ -7,6 +7,7 @@ CGI=/usr/lib/cgi-bin
 CC=gcc
 CFLAGS=-O0 -Wall -ggdb -I$(INC)
 LDFLAGS=-lsqlite3
+#DDATE=-DDDATE
 
 all:
 	make $(BIN)/blag.cgi
@@ -15,7 +16,7 @@ all:
 	make $(BIN)/post
 
 $(BIN)/blag.cgi: $(OBJ)/help.o $(OBJ)/ddate.o $(SRC)/webapp.c
-	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $^
+	$(CC) $(CFLAGS) $(DDATE) -o $@ $(LDFLAGS) $^
 
 $(BIN)/blag-rss.cgi: $(OBJ)/help.o $(SRC)/rss.c
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $^
