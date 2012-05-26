@@ -14,7 +14,7 @@ all:
 	make $(BIN)/createdb
 	make $(BIN)/post
 
-$(BIN)/blag.cgi: $(OBJ)/help.o $(SRC)/webapp.c
+$(BIN)/blag.cgi: $(OBJ)/help.o $(OBJ)/ddate.o $(SRC)/webapp.c
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $^
 
 $(BIN)/blag-rss.cgi: $(OBJ)/help.o $(SRC)/rss.c
@@ -30,6 +30,9 @@ $(OBJ)/sha1.o: $(SRC)/sha1.c
 	$(CC) $(CFLAGS) -c -o $@ $^
 
 $(OBJ)/help.o: $(SRC)/help.c
+	$(CC) $(CFLAGS) -c -o $@ $^
+
+$(OBJ)/ddate.o: $(SRC)/ddate.c
 	$(CC) $(CFLAGS) -c -o $@ $^
 
 install: $(BIN)/blag.cgi

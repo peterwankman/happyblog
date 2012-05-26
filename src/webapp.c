@@ -15,6 +15,7 @@
 #include <time.h>
 #include <sqlite3.h>
 #include "help.h"
+#include "ddate.h"
 
 #define MAXBUF 512
 #define TYPE_NONE	0
@@ -226,7 +227,7 @@ static int printposts(postmask_t mask, sqlite3 *db) {
 
 		currtime = localtime(&posttime);
 		if(isolder(currtime, &lasttime)) {
-			strftime(timebuf, MAXBUF, "%a %b %d %Y", currtime);
+			ddate(timebuf, currtime);
 			if(!newblock) {
 				printf("</ul>\n\n");
 			} else {
