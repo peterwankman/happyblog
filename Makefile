@@ -7,6 +7,7 @@ CGI=/usr/lib/cgi-bin
 CC=gcc
 CFLAGS=-O0 -Wall -ggdb -I$(INC)
 LDFLAGS=-lsqlite3
+
 #DDATE=-DDDATE
 
 all:
