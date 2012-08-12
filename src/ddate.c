@@ -86,12 +86,16 @@ void ddate(char *buffer, size_t maxsize, struct tm *eris)
                       "Bureaucracy",
                       "The Aftermath"
   };
+  char *end = NULL;
   struct disc_time tick;
   tick=convert(eris->tm_yday, eris->tm_year);
+  end = ending(tick.day);
   if (tick.day==-1) snprintf(buffer, maxsize, "St. Tib's Day in the YOLD %d",tick.year);
   else
     { tick.day++;
-      snprintf(buffer, maxsize, "%s, %d%s day of %s - YOLD %d", days[tick.yday%5], tick.day, ending(tick.day),seasons[tick.season], tick.year);
+      snprintf(buffer, maxsize, "%s, %d%s day of %s - YOLD %d", days[tick.yday%5], tick.day, end,seasons[tick.season], tick.year);
     }
+  if(end)
+    free(end);
 }
 
